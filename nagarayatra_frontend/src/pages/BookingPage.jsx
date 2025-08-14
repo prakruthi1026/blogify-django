@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import axios from 'axios'
+import { MapContainer, TileLayer, Marker, Polyline, Popup } from 'react-leaflet'
 
 const API_BASE = 'http://localhost:8000/api'
 
@@ -43,30 +44,51 @@ export default function BookingPage({ token }) {
     navigate('/payments')
   }
 
+  const center = trip?.route?.stops?.length ? [trip.route.stops[0].lat, trip.route.stops[0].lng] : [19.076, 72.8777]
+  const pts = (trip?.route?.stops || []).map(s => [s.lat, s.lng])
+
   return (
-    <div>
-      <h3>Booking</h3>
-      {!trip ? (
-        <div>Loading...</div>
-      ) : (
-        <div>
-          <div><strong>{trip.route?.name}</strong></div>
-          <div>Departure: {trip.departure_time?.replace('T',' ').slice(0,16)}</div>
-          <div>Seats available: {trip.seats_available}</div>
+    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+      <div>
+        <h3>Booking</h3>
+        {!trip ? (
+          <div>Loading...</div>
+        ) : (
           <div>
-            <label>Seats: </label>
-            <input type="number" value={seats} min="1" max={trip.seats_available} onChange={e => setSeats(parseInt(e.target.value || '1'))} />
-          </div>
-          {!booking ? (
-            <button onClick={createBooking}>Create Booking</button>
-          ) : (
+            <div><strong>{trip.route?.name}</strong></div>
+            <div>Departure: {trip.departure_time?.replace('T',' ').slice(0,16)}</div>
+            <div>Seats available: {trip.seats_available}</div>
             <div>
-              <div>Amount: ₹{booking.amount}</div>
-              <button onClick={initiatePayment}>Pay & Confirm</button>
+              <label>Seats: </label>
+              <input type="number" value={seats} min="1" max={trip.seats_available} onChange={e => setSeats(parseInt(e.target.value || '1'))} />
             </div>
-          )}
-        </div>
-      )}
+            {!booking ? (
+              <button onClick={createBooking}>Create Booking</button>
+            ) : (
+              <div>
+                <div>Amount: ₹{booking.amount}</div>
+                <button onClick={initiatePayment}>Pay & Confirm</button>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+      <div style={{ height: 420 }}>
+        <MapContainer center={center} zoom={12} style={{ height: '100%', width: '100%' }}>
+          <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" attribution="&copy; OpenStreetMap contributors" />
+          {pts.length > 0 && <Polyline positions={pts} color="#6a1b9a" />}
+          {(trip?.route?.stops || []).map((s, idx) => (
+            <Marker key={`bk-${idx}`} position={[s.lat, s.lng]}>
+              <Popup>
+                <div>
+                  <div>{trip?.route?.name}</div>
+                  <div>Stop: {s.name}</div>
+                </div>
+              </Popup>
+            </Marker>
+          ))}
+        </MapContainer>
+      </div>
     </div>
   )
 }
