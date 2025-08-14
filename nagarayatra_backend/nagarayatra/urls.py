@@ -17,8 +17,14 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path, include
 from rest_framework.authtoken.views import obtain_auth_token
+from django.http import JsonResponse
+
+
+def root(_request):
+	return JsonResponse({'app': 'NagaraYatra', 'status': 'ok'})
 
 urlpatterns = [
+	path('', root),
 	path('admin/', admin.site.urls),
 	path('api/auth/token/', obtain_auth_token),
 	path('api/rides/', include('rides.urls')),
